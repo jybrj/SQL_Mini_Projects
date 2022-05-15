@@ -1,0 +1,45 @@
+SELECT CTMR.CustomerID,
+       CTMR.CustomerName,
+
+		(SELECT COUNT(*)
+		 FROM Sales.Orders AS ORD
+		 WHERE ORD.CustomerID = CTMR.CustomerID
+		 AND EXISTS
+		(SELECT *
+		 FROM Sales.Invoices AS INV
+		 WHERE ORD.OrderID = INV.OrderID)) AS TotalNBOrders,
+
+		(SELECT COUNT(*)
+		 FROM Sales.Invoices AS INV
+		 WHERE INV.CustomerID = CTMR.CustomerID) AS TotalNBInvoices,
+
+		(SELECT SUM(ORDL.PickedQuantity*ORDL.UnitPrice) 
+		 FROM Sales.OrderLines AS ORDL
+		 INNER JOIN Sales.Orders AS ORD
+		 ON ORD.OrderID = ORDL.OrderID
+		 WHERE ORD.CustomerID = CTMR.CustomerID
+		 GROUP BY ORD.CustomerID) AS OrdersTotalValue,
+
+		(SELECT SUM(INVL.UnitPrice*INVL.Quantity) 
+		 FROM Sales.InvoiceLines AS INVL
+		 INNER JOIN Sales.Invoices AS INV
+		 ON INV.InvoiceID = INVL.InvoiceID
+		 WHERE INV.CustomerID = CTMR.CustomerID
+		 GROUP BY INV.CustomerID) AS InvoicesTotalValue,
+	
+		ABS((SELECT SUM(ORDL.PickedQuantity*ORDL.UnitPrice)
+			FROM Sales.OrderLines AS ORDL
+			INNER JOIN Sales.Orders AS ORD
+			ON ORD.OrderID = ORDL.OrderID
+			WHERE ORD.CustomerID = CTMR.CustomerID
+			GROUP BY ORD.CustomerID)
+			-
+			(SELECT SUM(INVL.UnitPrice*INVL.Quantity)
+			FROM Sales.InvoiceLines AS INVL
+			INNER JOIN Sales.Invoices AS INV
+			ON INV.InvoiceID = INVL.InvoiceID
+			WHERE INV.CustomerID = CTMR.CustomerID
+			GROUP BY INV.CustomerID)) AS AbsoluteValueDifference
+
+FROM Sales.Customers AS CTMR
+ORDER BY AbsoluteValueDifference DESC, TotalNBOrders ASC, CTMR.CustomerName ASC

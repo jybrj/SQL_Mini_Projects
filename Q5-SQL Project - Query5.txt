@@ -1,0 +1,14 @@
+SELECT * 
+FROM   Customer as CTMR
+WHERE  NOT EXISTS 
+	(SELECT * 
+	FROM   Product as PRD 
+	WHERE  NOT EXISTS 
+	(SELECT * 
+	 FROM   Purchase as PRCH 
+	 WHERE  PRCH.ProductId = PRD.ProductId 
+	 AND CTMR.CustomerId = PRCH.CustomerId))	                                                                     										 				 			 
+	      
+	AND	(SELECT SUM(PRCH.Qty) 
+		FROM   Purchase as PRCH 
+		WHERE  PRCH.CustomerId = CTMR.CustomerId) >= 50		

@@ -1,0 +1,26 @@
+SELECT New.CustomerCategoryName AS CustomerCategoryName,
+	   New.Loss AS MaxLoss,
+	   New.CustomerName,
+	   New.CustomerID
+FROM 
+	(SELECT SCAT.CustomerCategoryName AS CustomerCategoryName,
+			   SUM(SORL.Quantity * SORL.UnitPrice) AS Loss,
+			   CTMR.CustomerName AS CustomerName,
+			   CTMR.CustomerID AS CustomerID,
+			   ROW_NUMBER() OVER 
+			   (PARTITION BY SCAT.CustomerCategoryName 
+			   ORDER BY SUM(SORL.Quantity * SORL.UnitPrice) DESC) rn 
+		       FROM Sales.CustomerCategories AS SCAT
+		       INNER JOIN Sales.Customers AS CTMR
+			   ON CTMR.CustomerCategoryID = SCAT.CustomerCategoryID
+			   INNER JOIN Sales.Orders AS ORD
+			   ON ORD.CustomerID = CTMR.CustomerID
+			   INNER JOIN Sales.OrderLines AS SORL
+			   ON SORL.OrderID = ORD.OrderID
+			   WHERE NOT EXISTS
+					(SELECT *
+					FROM Sales.Invoices as INV
+					WHERE INV.OrderId = ORD.OrderID)
+					GROUP BY SCAT.CustomerCategoryName, CTMR.CustomerName, CTMR.CustomerID) AS New
+WHERE rn = 1
+ORDER BY MaxLoss DESC

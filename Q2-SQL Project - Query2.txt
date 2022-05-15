@@ -1,0 +1,11 @@
+UPDATE Sales.InvoiceLines 
+SET    UnitPrice = UnitPrice + 20 
+WHERE  InvoiceLineID = 
+        (SELECT TOP (1) INVL.InvoiceLineID 
+         FROM   Sales.Customers AS CTMR, 
+         Sales.Invoices AS INV, 
+         Sales.InvoiceLines AS INVL 
+         WHERE  INV.InvoiceID = INVL.InvoiceID 
+         AND INV.CustomerID = CTMR.CustomerID 
+         AND INV.CustomerID = 1060 
+         ORDER  BY INVL.InvoiceLineID ASC)
